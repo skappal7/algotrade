@@ -8,7 +8,7 @@ from ta.trend import SMAIndicator, EMAIndicator, MACD, IchimokuIndicator
 from ta.momentum import RSIIndicator, StochasticOscillator
 from ta.volatility import BollingerBands, AverageTrueRange
 from ta.volume import OnBalanceVolumeIndicator
-from ta.others import CCIIndicator
+from ta.momentum import CCIIndicator
 
 # Set the title and layout of the Streamlit app
 st.set_page_config(layout="wide")
