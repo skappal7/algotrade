@@ -24,16 +24,6 @@ end_date = st.sidebar.date_input("End Date", datetime.today())
 data = yf.download(ticker, start=start_date, end=end_date)
 data.reset_index(inplace=True)
 
-# Function to fetch news
-def fetch_news(ticker):
-    url = f'https://www.google.com/search?q={ticker}+stock+news'
-    headers = {'User-Agent': 'Mozilla/5.0'}
-    response = requests.get(url, headers=headers)
-    soup = BeautifulSoup(response.text, 'html.parser')
-    headlines = soup.find_all('div', attrs={'class': 'BNeawe vvjwJb AP7Wnd'})
-    news = [headline.get_text() for headline in headlines[:5]]
-    return news
-
 # Function to calculate OBV
 def calculate_obv(data):
     obv = [0]
@@ -66,17 +56,41 @@ def calculate_indicators(data):
 
 data = calculate_indicators(data)
 
-# Algorithmic Trading Strategies (simplified examples)
+# Algorithmic Trading Strategies
 def mean_reversion_strategy(data):
-    data['Signal'] = np.where(data['RSI'] < 30, 'Buy', np.where(data['RSI'] > 70, 'Sell', 'Hold'))
+    data['Position'] = np.where(data['RSI'] < 30, 1, 0)
+    data['Position'] = np.where(data['RSI'] > 70, -1, data['Position'])
+    data['Signal'] = data['Position'].diff()
     return data
 
 def moving_average_strategy(data):
-    data['Signal'] = np.where(data['SMA_20'] > data['EMA_20'], 'Buy', 'Sell')
+    data['Position'] = np.where(data['SMA_20'] > data['EMA_20'], 1, -1)
+    data['Signal'] = data['Position'].diff()
     return data
 
+def volume_weighted_average_price(data):
+    data['VWAP'] = (data['Close'] * data['Volume']).cumsum() / data['Volume'].cumsum()
+    data['Position'] = np.where(data['Close'] > data['VWAP'], 1, -1)
+    data['Signal'] = data['Position'].diff()
+    return data
+
+def bollinger_band_strategy(data):
+    data['Position'] = np.where(data['Close'] < data['BB_Low'], 1, 0)
+    data['Position'] = np.where(data['Close'] > data['BB_High'], -1, data['Position'])
+    data['Signal'] = data['Position'].diff()
+    return data
+
+def macd_strategy(data):
+    data['Position'] = np.where(data['MACD'] > data['MACD_Signal'], 1, -1)
+    data['Signal'] = data['Position'].diff()
+    return data
+
+# Apply strategies
 data = mean_reversion_strategy(data)
 data = moving_average_strategy(data)
+data = volume_weighted_average_price(data)
+data = bollinger_band_strategy(data)
+data = macd_strategy(data)
 
 # Plotting
 def plot_data(data):
@@ -106,6 +120,33 @@ def plot_data(data):
     
     return fig
 
+# Fetch S&P 500 Constituents
+def fetch_constituents():
+    url = 'https://en.wikipedia.org/wiki/List_of_S%26P_500_companies'
+    response = requests.get(url)
+    soup = BeautifulSoup(response.text, 'html.parser')
+    table = soup.find('table', {'id': 'constituents'})
+    df = pd.read_html(str(table))[0]
+    return df
+
+# Fetch Related Indices
+def fetch_related_indices():
+    url = 'https://finance.yahoo.com/quote/%5EGSPC/components/'
+    response = requests.get(url)
+    soup = BeautifulSoup(response.text, 'html.parser')
+    related_indices = []
+    for link in soup.find_all('a', {'data-test': 'quoteLink'}):
+        related_indices.append(link.text)
+    return related_indices
+
+# Fetch Market Sentiments
+def fetch_market_sentiments():
+    url = 'https://www.investing.com/indices/us-spx-500'
+    response = requests.get(url)
+    soup = BeautifulSoup(response.text, 'html.parser')
+    sentiment = soup.find('div', {'class': 'sentiment'}).text.strip()
+    return sentiment
+
 # Display the data and plots
 st.subheader("Price Data")
 st.write(data)
@@ -113,6 +154,35 @@ st.write(data)
 st.subheader("Candlestick Chart with Technical Indicators")
 st.plotly_chart(plot_data(data))
 
+# Header Information
+st.subheader("Header Information")
+st.write(f"Current Index Value: {data['Close'].iloc[-1]}")
+st.write(f"Last Update Time: {datetime.now()}")
+
+# Overview Section
+st.subheader("Overview Section")
+st.write("Basic description of the S&P 500 index")
+
+# Historical Data
+st.subheader("Historical Data")
+st.write(data[['Date', 'Open', 'High', 'Low', 'Close', 'Volume']])
+
+# Constituents
+st.subheader("Constituents")
+constituents = fetch_constituents()
+st.write(constituents)
+
+# Related Indices
+st.subheader("Related Indices")
+related_indices = fetch_related_indices()
+st.write(related_indices)
+
+# Market Sentiments
+st.subheader("Market Sentiments")
+sentiments = fetch_market_sentiments()
+st.write(sentiments)
+
+# Technical Summary
 st.subheader("Technical Summary")
 st.write("Buy/Sell signals based on technical indicators here...")
 
@@ -130,8 +200,3 @@ st.write("Pivot: ", data["Pivot"].iloc[-1])
 
 st.subheader("Trading Signals")
 st.write(data[['Date', 'Signal']])
-
-st.subheader("News Feed")
-news = fetch_news(ticker)
-for article in news:
-    st.write(article)
