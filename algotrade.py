@@ -1,35 +1,29 @@
 import streamlit as st
-import yfinance as yf
 import pandas as pd
-import datetime
-import plotly.graph_objects as go
+import yfinance as yf
 from ta.momentum import RSIIndicator, StochasticOscillator, StochRSIIndicator
 from ta.trend import SMAIndicator, EMAIndicator
 from ta.volatility import BollingerBands, AverageTrueRange
+import plotly.graph_objects as go
+from datetime import datetime
 
-# Set Streamlit configuration
-st.set_page_config(
-    page_title="S&P 500 Technical Analysis and Predictions",
-    layout="wide",
-    initial_sidebar_state="expanded",
-)
+st.set_page_config(page_title="S&P 500 Technical Analysis", layout="wide")
+st.sidebar.title("S&P 500 Technical Analysis")
 
-# Define sidebar inputs
-start_date = st.sidebar.date_input("Start Date", value=datetime.date.today() - datetime.timedelta(days=365))
-end_date = st.sidebar.date_input("End Date", value=datetime.date.today())
-
-# Fetch stock data
-@st.cache_data
+# Function to get stock data
 def get_stock_data(ticker, start, end):
-    stock_data = yf.download(ticker, start=start, end=end)
-    return stock_data.copy()
+    df = yf.download(ticker, start=start, end=end)
+    return df
 
-# Define app tabs
+# Sidebar inputs
+start_date = st.sidebar.date_input("Start Date", value=pd.to_datetime("2022-01-01"))
+end_date = st.sidebar.date_input("End Date", value=pd.to_datetime("2023-01-01"))
+
 tabs = st.tabs(["US Indices", "SP500 Stocks", "Key Definitions"])
 
 with tabs[0]:
     st.sidebar.title("US Indices Settings")
-    ticker = st.sidebar.selectbox("Select Ticker:", options=['^GSPC', '^DJI', '^IXIC'])
+    ticker = st.sidebar.selectbox("Select Ticker:", options=["^GSPC", "^DJI", "^IXIC", "^RUT"])
     data = get_stock_data(ticker, start_date, end_date)
 
     # Market Sentiment
@@ -172,7 +166,7 @@ with tabs[0]:
 
 with tabs[1]:
     st.sidebar.title("SP500 Stocks Settings")
-    ticker = st.sidebar.selectbox("Select Ticker:", options=pd.read_csv('https://datahub.io/core/s-and-p-500-companies/r/constituents.csv')['Symbol'].tolist())
+    ticker = st.sidebar.selectbox("Select SP500 Ticker:", options=yf.Tickers('AAPL MSFT GOOG AMZN').symbols)
     data = get_stock_data(ticker, start_date, end_date)
 
     # Market Sentiment
@@ -314,68 +308,41 @@ with tabs[1]:
     st.dataframe(data[['Close', 'Open', 'High', 'Low', 'Volume', 'Change', 'ChangePct']].dropna())
 
 with tabs[2]:
+    st.markdown("### Key Definitions of Metrics")
     st.markdown("""
-    ### Key Definitions of Metrics
-    #### Relative Strength Index (RSI)
-    RSI is a momentum oscillator that measures the speed and change of price movements. RSI values range from 0 to 100. Traditionally, RSI is considered overbought when above 70 and oversold when below 30.
+    **Relative Strength Index (RSI)**: RSI is a momentum oscillator that measures the speed and change of price movements. RSI values range from 0 to 100. Traditionally, RSI is considered overbought when above 70 and oversold when below 30.
 
-    #### Stochastic Oscillator (STOCH)
-    The Stochastic Oscillator is a momentum indicator comparing a particular closing price of a security to a range of its prices over a certain period of time. Sensitivity to market movements can be reduced by adjusting the time period or by taking a moving average of the result.
+    **Stochastic Oscillator (STOCH)**: The Stochastic Oscillator is a momentum indicator comparing a particular closing price of a security to a range of its prices over a certain period of time. Sensitivity to market movements can be reduced by adjusting the time period or by taking a moving average of the result.
 
-    #### Stochastic RSI (STOCHRSI)
-    STOCHRSI applies the Stochastic Oscillator formula to RSI values, instead of price data. It is more sensitive to recent price changes than RSI.
+    **Stochastic RSI (STOCHRSI)**: STOCHRSI applies the Stochastic Oscillator formula to RSI values, instead of price data. It is more sensitive to recent price changes than RSI.
 
-    #### Williams %R
-    Williams %R is a momentum indicator that measures overbought and oversold levels, similar to the Stochastic Oscillator. It ranges from 0 to -100.
+    **Williams %R**: Williams %R is a momentum indicator that measures overbought and oversold levels, similar to the Stochastic Oscillator. It ranges from 0 to -100.
 
-    #### Commodity Channel Index (CCI)
-    CCI measures the deviation of the price from its average price over a period of time. High positive readings indicate the price is well above its average, while low negative readings indicate the price is well below its average.
+    **Commodity Channel Index (CCI)**: CCI measures the deviation of the price from its average price over a period of time. High positive readings indicate the price is well above its average, while low negative readings indicate the price is well below its average.
 
-    #### Rate of Change (ROC)
-    ROC is a momentum oscillator that measures the percentage change in price between the current price and the price n periods ago.
+    **Rate of Change (ROC)**: ROC is a momentum oscillator that measures the percentage change in price between the current price and the price n periods ago.
 
-    #### Ultimate Oscillator
-    The Ultimate Oscillator is a momentum oscillator designed to capture momentum across three different timeframes.
+    **Ultimate Oscillator**: The Ultimate Oscillator is a momentum oscillator designed to capture momentum across three different timeframes.
 
-    #### Average True Range (ATR)
-    ATR measures market volatility by decomposing the entire range of an asset price for that period. It is used to measure volatility, with higher values indicating higher volatility.
+    **Average True Range (ATR)**: ATR measures market volatility by decomposing the entire range of an asset price for that period. It is used to measure volatility, with higher values indicating higher volatility.
 
-    #### Highs/Lows
-    This indicator calculates the difference between the highest and lowest prices over a specific period. It is used to identify breakout and breakdown levels.
+    **Highs/Lows**: This indicator calculates the difference between the highest and lowest prices over a specific period. It is used to identify breakout and breakdown levels.
 
-    #### Moving Average Convergence Divergence (MACD)
-    MACD is a trend-following momentum indicator that shows the relationship between two moving averages of a security’s price. The MACD is calculated by subtracting the 26-period EMA from the 12-period EMA.
+    **Moving Average Convergence Divergence (MACD)**: MACD is a trend-following momentum indicator that shows the relationship between two moving averages of a security’s price. The MACD is calculated by subtracting the 26-period EMA from the 12-period EMA.
 
-    #### Average Directional Index (ADX)
-    ADX measures the strength of a trend. Readings above 20 indicate a strong trend, while readings below 20 indicate a weak trend.
+    **Average Directional Index (ADX)**: ADX measures the strength of a trend. Readings above 20 indicate a strong trend, while readings below 20 indicate a weak trend.
 
-    #### Bull/Bear Power
-    Bull/Bear Power measures the buying or selling pressure in the market. Bull Power is calculated by subtracting the 13-period EMA from the high of the day. Bear Power is calculated by subtracting the 13-period EMA from the low of the day.
+    **Bull/Bear Power**: Bull/Bear Power measures the buying or selling pressure in the market. Bull Power is calculated by subtracting the 13-period EMA from the high of the day. Bear Power is calculated by subtracting the 13-period EMA from the low of the day.
 
-    #### Pivot Points
-    Pivot points are used to identify potential support and resistance levels. They are calculated based on the high, low, and closing prices of the previous day.
+    **Pivot Points**: Pivot points are used to identify potential support and resistance levels. They are calculated based on the high, low, and closing prices of the previous day.
 
-    ##### Classic
-    Classic pivot points are calculated using the standard formula: PP = (High + Low + Close) / 3, with support and resistance levels calculated based on this pivot point.
+    **Classic**: Classic pivot points are calculated using the standard formula: PP = (High + Low + Close) / 3, with support and resistance levels calculated based on this pivot point.
 
-    ##### Fibonacci
-    Fibonacci pivot points use Fibonacci retracement levels to calculate support and resistance levels.
+    **Fibonacci**: Fibonacci pivot points use Fibonacci retracement levels to calculate support and resistance levels.
 
-    ##### Camarilla
-    Camarilla pivot points use the closing price and a scaling factor to calculate support and resistance levels.
+    **Camarilla**: Camarilla pivot points use the closing price and a scaling factor to calculate support and resistance levels.
 
-    ##### Woodie's
-    Woodie's pivot points give more weight to the closing price.
+    **Woodie's**: Woodie's pivot points give more weight to the closing price.
 
-    ##### DeMark's
-    DeMark's pivot points are calculated differently depending on whether the close is higher, lower, or equal to the open.
+    **DeMark's**: DeMark's pivot points are calculated differently depending on whether the close is higher, lower, or equal to the open.
     """)
-
-# requirements.txt
-"""
-streamlit
-yfinance
-pandas
-plotly
-ta
-"""
