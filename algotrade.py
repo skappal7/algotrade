@@ -25,7 +25,7 @@ end_date = st.sidebar.date_input("End Date", value=datetime.date.today())
 @st.cache_data
 def get_stock_data(ticker, start, end):
     stock_data = yf.download(ticker, start=start, end=end)
-    return stock_data
+    return stock_data.copy()
 
 if tab == 'US Indices':
     ticker = st.sidebar.selectbox("Select Ticker:", options=['^GSPC', '^DJI', '^IXIC'])
