@@ -12,7 +12,7 @@ This is a Streamlit app for analyzing and trading based on technical indicators 
 
 1. Clone the repository:
     ```bash
-    git clone https://github.com/yourusername/trading-app.git
+    git clone https://github.com/skappal7/algotrade/tree/main
     ```
 
 2. Install the required packages:
