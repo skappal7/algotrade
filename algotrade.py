@@ -22,7 +22,7 @@ start_date = st.sidebar.date_input("Start Date", value=datetime.date.today() - d
 end_date = st.sidebar.date_input("End Date", value=datetime.date.today())
 
 # Fetch stock data
-@st.cache
+@st.cache_data
 def get_stock_data(ticker, start, end):
     stock_data = yf.download(ticker, start=start, end=end)
     return stock_data
@@ -35,9 +35,9 @@ else:
 data = get_stock_data(ticker, start_date, end_date)
 
 # Market Sentiment
-close_price = data['Close'][-1]
-ma_50 = SMAIndicator(close=data['Close'], window=50).sma_indicator()[-1]
-rsi = RSIIndicator(close=data['Close'], window=14).rsi()[-1]
+close_price = data['Close'].iloc[-1]
+ma_50 = SMAIndicator(close=data['Close'], window=50).sma_indicator().iloc[-1]
+rsi = RSIIndicator(close=data['Close'], window=14).rsi().iloc[-1]
 
 sentiment = "Bullish" if close_price > ma_50 and rsi > 50 else "Bearish" if close_price < ma_50 and rsi < 50 else "Neutral"
 st.markdown(f"### Market Sentiment: {sentiment}")
@@ -56,8 +56,8 @@ st.plotly_chart(fig)
 ma_periods = [5, 10, 20, 50, 100, 200]
 ma_table = pd.DataFrame(index=ma_periods, columns=['Simple MA', 'Simple Recommendation', 'Exponential MA', 'Exponential Recommendation'])
 for period in ma_periods:
-    sma = SMAIndicator(close=data['Close'], window=period).sma_indicator()[-1]
-    ema = EMAIndicator(close=data['Close'], window=period).ema_indicator()[-1]
+    sma = SMAIndicator(close=data['Close'], window=period).sma_indicator().iloc[-1]
+    ema = EMAIndicator(close=data['Close'], window=period).ema_indicator().iloc[-1]
     sma_recommendation = "Buy" if close_price > sma else "Sell"
     ema_recommendation = "Buy" if close_price > ema else "Sell"
     ma_table.loc[period] = [round(sma, 3), sma_recommendation, round(ema, 3), ema_recommendation]
@@ -66,49 +66,49 @@ st.markdown("### Moving Averages")
 st.dataframe(ma_table)
 
 # Momentum Oscillators Table
-rsi = RSIIndicator(close=data['Close'], window=14).rsi()[-1]
-stoch = StochasticOscillator(high=data['High'], low=data['Low'], close=data['Close'], window=14).stoch()[-1]
-stoch_rsi = StochRSIIndicator(close=data['Close'], window=14).stochrsi()[-1]
-williams_r = (data['Close'] - data['Low']) / (data['High'] - data['Low']) * -100
-cci = (data['Close'] - data['Close'].rolling(window=20).mean()) / (0.015 * data['Close'].rolling(window=20).std())
-roc = (data['Close'] - data['Close'].shift(12)) / data['Close'].shift(12) * 100
-ultimate_oscillator = (4 * data['Close'].rolling(window=7).mean() + 2 * data['Close'].rolling(window=14).mean() + data['Close'].rolling(window=28).mean()) / 7
+rsi = RSIIndicator(close=data['Close'], window=14).rsi().iloc[-1]
+stoch = StochasticOscillator(high=data['High'], low=data['Low'], close=data['Close'], window=14).stoch().iloc[-1]
+stoch_rsi = StochRSIIndicator(close=data['Close'], window=14).stochrsi().iloc[-1]
+williams_r = ((data['Close'] - data['Low']) / (data['High'] - data['Low']) * -100).iloc[-1]
+cci = ((data['Close'] - data['Close'].rolling(window=20).mean()) / (0.015 * data['Close'].rolling(window=20).std())).iloc[-1]
+roc = ((data['Close'] - data['Close'].shift(12)) / data['Close'].shift(12) * 100).iloc[-1]
+ultimate_oscillator = ((4 * data['Close'].rolling(window=7).mean() + 2 * data['Close'].rolling(window=14).mean() + data['Close'].rolling(window=28).mean()) / 7).iloc[-1]
 
 oscillators = pd.DataFrame({
     'Name': ['RSI(14)', 'STOCH(9,6)', 'STOCHRSI(14)', 'Williams %R', 'CCI(14)', 'ROC', 'Ultimate Oscillator'],
-    'Value': [rsi, stoch, stoch_rsi, williams_r, cci[-1], roc[-1], ultimate_oscillator[-1]],
+    'Value': [rsi, stoch, stoch_rsi, williams_r, cci, roc, ultimate_oscillator],
     'Action': [
         "Sell" if rsi > 70 else "Buy" if rsi < 30 else "",
         "Sell" if stoch > 80 else "Buy" if stoch < 20 else "",
         "Sell" if stoch_rsi > 70 else "Buy" if stoch_rsi < 30 else "",
         "Sell" if williams_r > -20 else "Buy" if williams_r < -80 else "",
-        "Sell" if cci[-1] > 100 else "Buy" if cci[-1] < -100 else "",
-        "Buy" if roc[-1] > 0 else "Sell",
-        "Sell" if ultimate_oscillator[-1] > 70 else "Buy" if ultimate_oscillator[-1] < 30 else ""
+        "Sell" if cci > 100 else "Buy" if cci < -100 else "",
+        "Buy" if roc > 0 else "Sell",
+        "Sell" if ultimate_oscillator > 70 else "Buy" if ultimate_oscillator < 30 else ""
     ]
 })
 st.markdown("### Momentum Oscillators")
 st.dataframe(oscillators)
 
 # Volatility Table
-atr = AverageTrueRange(high=data['High'], low=data['Low'], close=data['Close']).average_true_range()[-1]
-highs_lows = data['High'] - data['Low']
+atr = AverageTrueRange(high=data['High'], low=data['Low'], close=data['Close']).average_true_range().iloc[-1]
+highs_lows = (data['High'] - data['Low']).mean()
 volatility = pd.DataFrame({
     'Name': ['ATR(14)', 'Highs/Lows(14)'],
-    'Value': [atr, highs_lows.mean()],
-    'Action': ['High Volatility' if atr > 10 else 'Less Volatility', 'Buy' if highs_lows.mean() > 0 else 'Sell']
+    'Value': [atr, highs_lows],
+    'Action': ['High Volatility' if atr > 10 else 'Less Volatility', 'Buy' if highs_lows > 0 else 'Sell']
 })
 st.markdown("### Volatility")
 st.dataframe(volatility)
 
 # Pivot Points Table
-pivot = (data['High'][-1] + data['Low'][-1] + data['Close'][-1]) / 3
-s1 = (2 * pivot) - data['High'][-1]
-s2 = pivot - (data['High'][-1] - data['Low'][-1])
-s3 = s1 - (data['High'][-1] - data['Low'][-1])
-r1 = (2 * pivot) - data['Low'][-1]
-r2 = pivot + (data['High'][-1] - data['Low'][-1])
-r3 = r1 + (data['High'][-1] - data['Low'][-1])
+pivot = (data['High'].iloc[-1] + data['Low'].iloc[-1] + data['Close'].iloc[-1]) / 3
+s1 = (2 * pivot) - data['High'].iloc[-1]
+s2 = pivot - (data['High'].iloc[-1] - data['Low'].iloc[-1])
+s3 = s1 - (data['High'].iloc[-1] - data['Low'].iloc[-1])
+r1 = (2 * pivot) - data['Low'].iloc[-1]
+r2 = pivot + (data['High'].iloc[-1] - data['Low'].iloc[-1])
+r3 = r1 + (data['High'].iloc[-1] - data['Low'].iloc[-1])
 
 pivot_points = pd.DataFrame({
     'Name': ['Classic'],
