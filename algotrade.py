@@ -4,10 +4,9 @@ import pandas as pd
 import datetime
 import plotly.graph_objects as go
 from ta.momentum import RSIIndicator, StochasticOscillator, StochRSIIndicator
-from ta.trend import SMAIndicator, EMAIndicator, MACD
+from ta.trend import SMAIndicator, EMAIndicator
 from ta.volatility import BollingerBands, AverageTrueRange
 from ta.volume import VolumeWeightedAveragePrice
-import plotly.express as px
 
 # Set Streamlit configuration
 st.set_page_config(
@@ -18,11 +17,10 @@ st.set_page_config(
 
 # Define sidebar inputs
 st.sidebar.title("Settings")
-ticker = st.sidebar.selectbox("Select Ticker:", options=['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'FB'])
+tab = st.sidebar.radio("Select Tab:", ['US Indices', 'Stocks Under Each Index'])
+
 start_date = st.sidebar.date_input("Start Date", value=datetime.date.today() - datetime.timedelta(days=365))
 end_date = st.sidebar.date_input("End Date", value=datetime.date.today())
-zoom_in = st.sidebar.button("Zoom In")
-zoom_out = st.sidebar.button("Zoom Out")
 
 # Fetch stock data
 @st.cache
@@ -30,16 +28,12 @@ def get_stock_data(ticker, start, end):
     stock_data = yf.download(ticker, start=start, end=end)
     return stock_data
 
-data = get_stock_data(ticker, start_date, end_date)
+if tab == 'US Indices':
+    ticker = st.sidebar.selectbox("Select Ticker:", options=['^GSPC', '^DJI', '^IXIC'])
+else:
+    ticker = st.sidebar.selectbox("Select Ticker:", options=['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'FB'])
 
-# Zoom functionality
-if zoom_in:
-    start_date += datetime.timedelta(days=10)
-    end_date -= datetime.timedelta(days=10)
-if zoom_out:
-    start_date -= datetime.timedelta(days=10)
-    end_date += datetime.timedelta(days=10)
-    data = get_stock_data(ticker, start_date, end_date)
+data = get_stock_data(ticker, start_date, end_date)
 
 # Market Sentiment
 close_price = data['Close'][-1]
