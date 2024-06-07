@@ -22,10 +22,10 @@ start_date = st.sidebar.date_input("Start Date", value=datetime.date.today() - d
 end_date = st.sidebar.date_input("End Date", value=datetime.date.today())
 
 # Fetch stock data
-@st.cache_data(allow_output_mutation=True)
+@st.cache_data
 def get_stock_data(ticker, start, end):
     stock_data = yf.download(ticker, start=start, end=end)
-    return stock_data
+    return stock_data.copy()
 
 if tab == 'US Indices':
     ticker = st.sidebar.selectbox("Select Ticker:", options=['^GSPC', '^DJI', '^IXIC'])
@@ -69,10 +69,10 @@ st.dataframe(ma_table)
 rsi = RSIIndicator(close=data['Close'], window=14).rsi().iloc[-1]
 stoch = StochasticOscillator(high=data['High'], low=data['Low'], close=data['Close'], window=14).stoch().iloc[-1]
 stoch_rsi = StochRSIIndicator(close=data['Close'], window=14).stochrsi().iloc[-1]
-williams_r = ((data['Close'].iloc[-1] - data['Low'].iloc[-1]) / (data['High'].iloc[-1] - data['Low'].iloc[-1]) * -100)
-cci = ((data['Close'].iloc[-1] - data['Close'].rolling(window=20).mean().iloc[-1]) / (0.015 * data['Close'].rolling(window=20).std().iloc[-1]))
-roc = ((data['Close'].iloc[-1] - data['Close'].shift(12).iloc[-1]) / data['Close'].shift(12).iloc[-1] * 100)
-ultimate_oscillator = ((4 * data['Close'].rolling(window=7).mean().iloc[-1] + 2 * data['Close'].rolling(window=14).mean().iloc[-1] + data['Close'].rolling(window=28).mean().iloc[-1]) / 7)
+williams_r = ((data['Close'] - data['Low']) / (data['High'] - data['Low']) * -100).iloc[-1]
+cci = ((data['Close'] - data['Close'].rolling(window=20).mean()) / (0.015 * data['Close'].rolling(window=20).std())).iloc[-1]
+roc = ((data['Close'] - data['Close'].shift(12)) / data['Close'].shift(12) * 100).iloc[-1]
+ultimate_oscillator = ((4 * data['Close'].rolling(window=7).mean() + 2 * data['Close'].rolling(window=14).mean() + data['Close'].rolling(window=28).mean()) / 7).iloc[-1]
 
 oscillators = pd.DataFrame({
     'Name': ['RSI(14)', 'STOCH(9,6)', 'STOCHRSI(14)', 'Williams %R', 'CCI(14)', 'ROC', 'Ultimate Oscillator'],
@@ -176,7 +176,7 @@ ATR measures market volatility by decomposing the entire range of an asset price
 This indicator calculates the difference between the highest and lowest prices over a specific period. It is used to identify breakout and breakdown levels.
 
 #### Moving Average Convergence Divergence (MACD)
-MACD is a trend-following momentum indicator that shows the relationship between two moving averages of a security's price. The MACD is calculated by subtracting the 26-period EMA from the 12-period EMA.
+MACD is a trend-following momentum indicator that shows the relationship between two moving averages of a security’s price. The MACD is calculated by subtracting the 26-period EMA from the 12-period EMA.
 
 #### Average Directional Index (ADX)
 ADX measures the strength of a trend. Readings above 20 indicate a strong trend, while readings below 20 indicate a weak trend.
