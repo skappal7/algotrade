@@ -8,7 +8,6 @@ from ta.trend import SMAIndicator, EMAIndicator, MACD, IchimokuIndicator
 from ta.momentum import RSIIndicator, StochasticOscillator
 from ta.volatility import BollingerBands, AverageTrueRange
 from ta.volume import OnBalanceVolumeIndicator
-from ta.momentum import CCIIndicator
 
 # Set the title and layout of the Streamlit app
 st.set_page_config(layout="wide")
@@ -53,7 +52,6 @@ def calculate_indicators(data):
     data["Ichimoku_Lead1"] = ichimoku.ichimoku_a()
     data["Ichimoku_Lead2"] = ichimoku.ichimoku_b()
     data["Stochastic"] = StochasticOscillator(data["Close"]).stoch()
-    data["CCI"] = CCIIndicator(data["High"], data["Low"], data["Close"], window=20).cci()
     data["Pivot"] = (data["High"] + data["Low"] + data["Close"]) / 3
     return data
 
@@ -116,9 +114,6 @@ st.write("Pivot: ", data["Pivot"].iloc[-1])
 
 st.subheader("Stochastic Oscillator")
 st.write("Stochastic: ", data["Stochastic"].iloc[-1])
-
-st.subheader("Commodity Channel Index (CCI)")
-st.write("CCI: ", data["CCI"].iloc[-1])
 
 st.subheader("On-balance Volume (OBV)")
 st.write("OBV: ", data["OBV"].iloc[-1])
