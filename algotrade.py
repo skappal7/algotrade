@@ -6,7 +6,6 @@ import plotly.graph_objects as go
 from ta.momentum import RSIIndicator, StochasticOscillator, StochRSIIndicator
 from ta.trend import SMAIndicator, EMAIndicator
 from ta.volatility import BollingerBands, AverageTrueRange
-from ta.volume import VolumeWeightedAveragePrice
 
 # Set Streamlit configuration
 st.set_page_config(
